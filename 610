@@ -1,0 +1,193 @@
+//This tool was created by Emily Drobes from Florida State University and Joshua Abbatiello from the University of South Florida.
+
+import controlP5.*;
+//Imported library that makes the sliders
+ControlP5 MC;
+//Name of the object for the controlP5 library
+//Starting x position of where the y ticks start
+int yTickstart=120;
+//Ending x position of where the y ticks end
+int yTickend=110;
+//Starting y position of where the x ticks start
+int xTickstart=100;
+//Ending y position of where the x ticks end
+int xTickend=90;
+//Amount subtracted or added between ticks
+float tickSpacing=77.5;
+//Y position of the text on the x axis. 
+int xTextpos=85;
+//X position of the text on the y axis. 
+int yTextpos=75;
+Slider minimumHeight, maximumHeight;
+//minHeight gets the min value from the slider, maxHeight gets the max value from the slider
+int minHeight, maxHeight;
+//scaledMinheight scales minHeight to the graph, scaledMaxheight scales maxHeight to the graph
+float scaledMinheight, scaledMaxheight;
+//N is number of "points", prn is the probable release number, scaledWidth scales the width to the graph,
+//rectX gives the x coordinate of the box on the graph, boxHeight calculates the height of the box
+float N, prn, scaledWidth, rectX, boxHeight;
+//Xconstrain sets limits on rectX so box doesn't go off the graph, wConstrain sets limits on scaledWidth so the right side of box doesn't go off graph
+float Xconstrain, wConstrain, prnConstrain;
+
+void setup() {
+  size(1000, 1000);
+
+  PFont pfont=createFont("ArialMT", 12, true);
+  ControlFont font1=new ControlFont(pfont, 0);
+ 
+
+  MC=new ControlP5(this); 
+
+  //(name of slider, min, max, starting value, x, y, width, height)
+  minimumHeight = MC.addSlider("minimum_Height", 0, 39000, 0, 670, 50, 100, 15);
+  MC.getController("minimum_Height")
+    .getCaptionLabel()
+      .setFont(font1)
+        .setSize(15)
+          ;
+  maximumHeight= MC.addSlider("maximum_Height", 0, 40000, 0, 670, 20, 100, 15);
+  MC.getController("maximum_Height")
+    .getCaptionLabel()
+      .setFont(font1)
+        .setSize(15)
+          ;
+  //Adds the sliders for the variables
+  fill(0);
+  stroke(0);
+  //Bottom x axis line
+  rect(120, 875, 775, height-999);
+
+
+  //This alligns the Y axis text to the center and rotates it 
+  textAlign(CENTER, BOTTOM);
+  pushMatrix();
+  translate(width-980, height-520);
+  rotate(-HALF_PI);
+  text("Elevation (masl)", 0, 0);
+  popMatrix();
+  PFont font;
+  // The font must be located in the sketch's 
+  // "data" directory to load successfully 
+
+  font = loadFont("ArialMT-12.vlw");
+  textFont(font, 12);
+  text("Probable Release", width-498, 50);
+
+
+
+
+
+
+
+  //Y axis line (elevation)
+  rect(yTickstart, 100, width-999, 875-100);
+  //Y axis tick marks (0-50000)
+  line(yTickstart, 875, yTickend, 875);
+  line(yTickstart, 875-tickSpacing, yTickend, 875-tickSpacing);
+  line(yTickstart, 797.5-tickSpacing, yTickend, 797.5-tickSpacing);
+  line(yTickstart, 720-tickSpacing, yTickend, 720-tickSpacing);
+  line(yTickstart, 642.5-tickSpacing, yTickend, 642.5-tickSpacing);
+  line(yTickstart, 565-tickSpacing, yTickend, 565-tickSpacing);
+  line(yTickstart, 487.5-tickSpacing, yTickend, 487.5-tickSpacing);
+  line(yTickstart, 410-tickSpacing, yTickend, 410-tickSpacing);
+  line(yTickstart, 332.5-tickSpacing, yTickend, 332.5-tickSpacing);
+  line(yTickstart, 255-tickSpacing, yTickend, 255-tickSpacing);
+  line(yTickstart, 177.5-tickSpacing, yTickend, 177.5-tickSpacing);
+
+
+  //The right most y axis line
+  rect(895, 100, width-999, 875-100);
+
+
+
+  //Top x axis line
+  rect(120, xTickstart, width-225, height-999);
+  //Top x axis tick marks
+  line(120, xTickstart, 120, xTickend);
+  line(508, xTickstart, 508, xTickend);
+  line(895, xTickstart, 895, xTickend);
+
+
+
+  //0 mark applied to both axis
+  text(0, yTextpos+20, 875+4);
+  //X axis labels
+  text(-1, 120, xTextpos);
+  text(0, 508, xTextpos);
+  text(1, 895, xTextpos);
+
+  //Y axis labels
+  text(4000, yTextpos, 801.5);
+  text(8000, yTextpos, 724);
+  text(12000, yTextpos, 646.5);
+  text(16000, yTextpos, 569);
+  text(20000, yTextpos, 491.5);
+  text(24000, yTextpos, 414);
+  text(28000, yTextpos, 336.5);
+  text(32000, yTextpos, 259);
+  text(36000, yTextpos, 181.5);
+  text(40000, yTextpos, 104);
+
+ //colors the triangle brown
+  fill(108, 54, 13);
+  //draws triangle that represents vent
+  triangle(508, 876, 408, height, 608, height);
+}
+
+//replace this later based on screen dimensions
+
+
+void draw () {
+  //draws the white rectangle around graph
+  fill(255);
+  rect(120, 100, 775, 775);
+
+//gets the value from minimumHeight slider
+  minHeight = (int)minimumHeight.getValue();
+  //gets the value from maximumHeight slider
+  maxHeight = (int)maximumHeight.getValue();
+  //sets the min of the maximumHeight slider to adjust to the value of minimumHeight slider
+  maximumHeight.setMin(minHeight);
+  //40000 is the maximum value on the graph and 775 is the pixel size of the graph
+  scaledMinheight=minHeight/40000.0*775;
+
+  scaledMaxheight=maxHeight/40000.0*775;
+
+  boxHeight=maximumHeight.getValue()-minimumHeight.getValue(); 
+  //the graph pixel height is divided by 101 "points" to obtain the value of 7.7 pixels per point.
+  //
+  N = (boxHeight/101)/7.7;
+  //1 is divided by N to obtain the probable release number that corresponds to the top x-axis
+  prn = 1/N;
+  prnConstrain = constrain(prn,0,1);
+  //The prn is multiplied by 2 to reflect
+  scaledWidth = 2*prnConstrain/1.0*775;
+  rectX = 508-(prnConstrain)/1.0*775;
+  Xconstrain = constrain(rectX, 121, 508);
+  wConstrain = constrain(scaledWidth, 0, 775);
+
+
+//makes boxes reddish color
+  fill(155, 5, 7);
+
+  //Top hat rect(x position, x axis position-scaled min height,width,
+  rect(Xconstrain, 875-(scaledMinheight), wConstrain, -1*(scaledMaxheight-scaledMinheight));
+  //Distance from vent
+  rect(493, 875, 30, -minHeight/40000.0*775);
+ 
+ stroke(0);
+fill(255); 
+  rect(896,100,width-896,775);
+  
+  fill(0);
+  stroke(0);
+  text(minHeight,530+((prnConstrain)/1.0*775),875-(scaledMinheight));
+  
+  
+  println(prn);
+  
+//  println(scaledWidth);
+}
+
+
+//Adjust widths in its own function and call it in draw
