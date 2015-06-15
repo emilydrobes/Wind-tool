@@ -1,0 +1,227 @@
+//This tool was created by Emily Drobes from Florida State University and Joshua Abbatiello from the University of South Florida.
+
+import controlP5.*;
+//Imported library that makes the sliders
+ControlP5 MC;
+//Name of the object for the controlP5 library
+
+//slider names
+Slider a, b;
+//variable names that get values from sliders
+//alpha gets the alpha value from the slider, beta gets the beta value from the slider
+int alpha, beta;
+//scaledMinheight scales minHeight to the graph, scaledMaxheight scales maxHeight to the graph
+//float scaledMinheight, scaledMaxheight;
+//N is number of "points", prn is the probable release number, scaledWidth scales the width to the graph,
+//rectX gives the x coordinate of the box on the graph, boxHeight calculates the height of the box
+//float N, prn, scaledWidth, rectX, boxHeight;
+//Xconstrain sets limits on rectX so box doesn't go off the graph, wConstrain sets limits on scaledWidth so the right side of box doesn't go off graph
+//float Xconstrain, wConstrain, prnConstrain;
+//slider "names"
+int alphaSlider,betaSlider;
+float x, probability;
+int i;
+
+void setup() {
+
+  size(1000, 1000);
+  background(203, 203, 203);
+
+  //Starting x position of where the y ticks start
+  float yTickstart=.120*width;
+  //Ending x position of where the y ticks end
+  float yTickend=.110*width;
+  //Starting y position of where the x ticks start
+  float xTickstart=.100*height;
+  //Ending y position of where the x ticks end
+  float xTickend=.090*height;
+  //Amount subtracted or added between ticks
+  float tickSpacing=.0775*height;
+  //Y position of the text on the x axis. 
+  float xTextpos=.085*height;
+  //X position of the text on the y axis. 
+  float yTextpos=.075*width;
+
+
+  PFont pfont=createFont("ArialMT", 12, true);
+  ControlFont font1=new ControlFont(pfont, 0);
+
+
+  MC=new ControlP5(this); 
+
+  //(name of slider, min, max, starting value, x, y, width, height)
+  a = MC.addSlider("alphaSlider", int(0), int(10), int(0), round(.670*width), round(.050*height), round(.100*width), round(.015*height));
+//  .setNumberOfTickMarks(5)
+//    .snapToTickMarks(true)
+//      ;
+  MC.getController("alphaSlider")
+
+    .getCaptionLabel()
+      .setFont(font1)
+        .setSize(15)
+//          .setNumberOfTickMarks( 5)
+            ;
+  b= MC.addSlider("betaSlider", 0, 10, 0, round(.670*width), round(.020*height), round(.100*width), round(.015*height));
+  MC.getController("betaSlider")
+    .getCaptionLabel()
+      .setFont(font1)
+        .setSize(15)
+          ;
+  //Adds the sliders for the variables
+  fill(0);
+  stroke(0);
+  //Bottom x axis line
+  rect(.120*width, .875*height, .775*width, .001*height);
+
+
+  //This alligns the Y axis text to the center and rotates it 
+  textAlign(CENTER, BOTTOM);
+  pushMatrix();
+  translate(.020*width, .480*height);
+  rotate(-HALF_PI);
+  text("Elevation (masl)", 0, 0);
+  popMatrix();
+  PFont font;
+  // The font must be located in the sketch's 
+  // "data" directory to load successfully 
+
+  font = loadFont("ArialMT-12.vlw");
+  textFont(font, 12);
+  text("Probable Release", .502*width, .050*height);
+
+
+
+
+
+
+
+  //Y axis line (elevation)
+  rect(yTickstart, .100*height, .001*width, .775*height);
+  //Y axis tick marks (0-50000)
+  line(yTickstart, .875*height, yTickend, .875*height);
+  line(yTickstart, .875*height-tickSpacing, yTickend, .875*height-tickSpacing);
+  line(yTickstart, .7975*height-tickSpacing, yTickend, .7975*height-tickSpacing);
+  line(yTickstart, .720*height-tickSpacing, yTickend, .720*height-tickSpacing);
+  line(yTickstart, .6425*height-tickSpacing, yTickend, .6425*height-tickSpacing);
+  line(yTickstart, .565*height-tickSpacing, yTickend, .565*height-tickSpacing);
+  line(yTickstart, .4875*height-tickSpacing, yTickend, .4875*height-tickSpacing);
+  line(yTickstart, .410*height-tickSpacing, yTickend, .410*height-tickSpacing);
+  line(yTickstart, .3325*height-tickSpacing, yTickend, .3325*height-tickSpacing);
+  line(yTickstart, .255*height-tickSpacing, yTickend, .255*height-tickSpacing);
+  line(yTickstart, .1775*height-tickSpacing, yTickend, .1775*height-tickSpacing);
+
+
+  //The right most y axis line
+  rect(.895*width, .100*height, .001*width, .775*height);
+
+
+
+  //Top x axis line
+  rect(.120*width, xTickstart, .775*width, .001*height);
+  //Top x axis tick marks
+  line(.120*width, xTickstart, .120*width, xTickend);
+  line(.508*width, xTickstart, .508*width, xTickend);
+  line(.895*width, xTickstart, .895*width, xTickend);
+
+
+
+  //0 mark applied to both axis
+  text(0, yTextpos+.020*width, .879*height);
+  //X axis labels
+  text(-1, .120*width, xTextpos);
+  text(0, .508*width, xTextpos);
+  text(1, .895*width, xTextpos);
+
+  //Y axis labels
+  text(4000, yTextpos, .8015*height);
+  text(8000, yTextpos, .724*height);
+  text(12000, yTextpos, .6465*height);
+  text(16000, yTextpos, .569*height);
+  text(20000, yTextpos, .4915*height);
+  text(24000, yTextpos, .414*height);
+  text(28000, yTextpos, .3365*height);
+  text(32000, yTextpos, .259*height);
+  text(36000, yTextpos, .1815*height);
+  text(40000, yTextpos, .104*height);
+}
+
+
+
+
+void draw () {
+  //draws the white rectangle around graph
+  fill(255);
+  rect(.120*width, .100*height, .775*width, .775*height);
+
+
+
+  //gets the value from a slider
+  alpha = (int)(a.getValue());
+  //gets the value from b slider
+  beta = (int)(b.getValue());
+  //draw a point every 7.7 pixels
+  for (int i=0; i<101; i++) {
+    ellipse(scaledProbability, 875-7.7(i),5,5);
+    //.019375 pixels = 1 m
+    
+    //x is the elevation as a fraction of 1
+  x = 1/elevation;
+
+//probability function
+ probability = ( pow(x,( alpha - 1.0))) * (pow((1.0 -  x),( beta - 1.0)));
+
+
+
+  //sets the min of the maximumHeight slider to adjust to the value of minimumHeight slider
+//  maximumHeight.setMin(minHeight+1);
+  //40000 is the maximum value on the graph and 775 is the pixel size of the graph
+ // scaledMinheight=minHeight/40000.0*.775*height;
+
+  //scaledMaxheight=maxHeight/40000.0*.775*height;
+
+ // boxHeight=maximumHeight.getValue()-minimumHeight.getValue(); 
+  //the graph pixel height is divided by 101 "points" to obtain the value of 7.7 pixels per point.
+  //
+  //N = (boxHeight/(101.0))/(.0077*height);
+  //1 is divided by N to obtain the probable release number that corresponds to the top x-axis
+  //prn = 1/N;
+ // prnConstrain = constrain(prn, 0, 1);
+  //The prn is multiplied by 2 to reflect
+ // scaledWidth = 2*prnConstrain/1.0*(.775*width);
+ // rectX = (.508*width)-(prnConstrain)/1.0*(.775*width);
+ // Xconstrain = constrain(rectX, .121*width, .508*width);
+ //wConstrain = constrain(scaledWidth, 0, .775*width);
+
+
+
+  //makes boxes reddish color
+  fill(155, 5, 7);
+
+//  //Top hat rect(x position, x axis position-scaled min height,width,
+//  rect(Xconstrain, (.875*height)-(scaledMinheight), wConstrain, -1*(scaledMaxheight-scaledMinheight));
+//  //Distance from vent
+////  rect(.506*width, .875*height, .004*width, -minHeight/40000.0*(.775*height));
+//
+//  //rectangle to the right of the graph (so numbers can be redrawn
+//  noStroke();
+//  fill(203, 203, 203); 
+//  rect(.896*width, .100*height, .104*width, .790*height);
+//
+//  //rectangle below the graph
+//  noStroke();
+//  fill(203, 203, 203); 
+//  rect(.120*width, .876*height, .775*width, .125*height);
+//
+  //colors the triangle brown
+  fill(108, 54, 13);
+  //draws triangle that represents vent
+  triangle(.508*width, .876*height, .408*width, height, .608*width, height);
+//
+//  //reads values of min and max next to box
+//  fill(0);
+//  stroke(0);
+//  text((int)minHeight, Xconstrain+wConstrain+(.020*width), (.875*height)-(scaledMinheight-(.012*height)));
+//  text((int)maxHeight, Xconstrain+wConstrain+(.020*width), (.875*height)-(scaledMaxheight-(.012*height)));
+}
+
+
