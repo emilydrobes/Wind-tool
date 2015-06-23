@@ -1,0 +1,212 @@
+//This tool was created by Emily Drobes from Florida State University and Joshua Abbatiello from the University of South Florida.
+
+import controlP5.*;
+//Imported library that makes the sliders
+ControlP5 MC;
+//Name of the object for the controlP5 library
+float maxPixelHt=775, yConstrain;
+particle[] 
+particles= { 
+  new particle(800, 1/16000.0), 
+  new particle(1400, 1/4000.0), 
+  new particle(1900, .004), 
+  new particle(2700, .016)
+}
+;
+
+
+
+
+void setup() {
+
+  size(1000, 1000);
+  background(203, 203, 203);
+
+frameRate(60);
+
+
+  //Starting x position of where the y ticks start
+  float yTickstart=.120*width;
+  //Ending x position of where the y ticks end
+  float yTickend=.110*width;
+  //Starting y position of where the x ticks start
+  float xTickstart=.100*height;
+  //Ending y position of where the x ticks end
+  float xTickend=.090*height;
+  //Amount subtracted or added between ticks
+  float tickSpacing=.0775*height;
+  //Y position of the text on the x axis. 
+  float xTextpos=.085*height;
+  //X position of the text on the y axis. 
+  float yTextpos=.075*width;
+
+
+  //int y = round(.020*height);
+  //int spacing = 30;
+
+  //  PFont pfont=createFont("ArialMT", 12, true);
+  //  ControlFont font1=new ControlFont(pfont, 0);
+
+  PFont font;
+  font = loadFont("ArialMT-12.vlw");
+  //
+  //  MC=new ControlP5(this); 
+  //  //Adds the sliders for the variables
+  //  //(name of slider, min, max, starting value, x, y, width, height)
+  //  a = MC.addSlider("alphaSlider", 0, 10, 0, round(.670*width), round(.020*height), round(.100*width), round(.015*height));
+  //  //changes font of slider label
+  //  MC.getController("alphaSlider")
+  //    .getCaptionLabel()
+  //      .setFont(font)
+  //        .setSize(15)
+  //          ;
+  //
+  //  b= MC.addSlider("betaSlider", 0, 10, 0, round(.670*width), round(.050*height), round(.100*width), round(.015*height));
+  //  MC.getController("betaSlider")
+  //    .getCaptionLabel()
+  //      .setFont(font)
+  //        .setSize(15)
+  //          ;
+
+
+
+  fill(0);
+  stroke(0);
+  //Bottom x axis line
+  rect(.120*width, .875*height, .775*width, .001*height);
+
+
+  //This alligns the Y axis text to the center and rotates it 
+  textAlign(CENTER, BOTTOM);
+  pushMatrix();
+  translate(.020*width, .480*height);
+  rotate(-HALF_PI);
+  text("Elevation (masl)", 0, 0);
+  popMatrix();
+
+  // The font must be located in the sketch's 
+  // "data" directory to load successfully 
+
+
+  textFont(font, 12);
+  text("Laminar Flow", .502*width, .050*height);
+
+
+  //Y axis line (elevation)
+  rect(yTickstart, .100*height, .001*width, maxPixelHt);
+  //Y axis tick marks (0-50000)
+  line(yTickstart, .875*height, yTickend, .875*height);
+  line(yTickstart, .875*height-tickSpacing, yTickend, .875*height-tickSpacing);
+  line(yTickstart, .7975*height-tickSpacing, yTickend, .7975*height-tickSpacing);
+  line(yTickstart, .720*height-tickSpacing, yTickend, .720*height-tickSpacing);
+  line(yTickstart, .6425*height-tickSpacing, yTickend, .6425*height-tickSpacing);
+  line(yTickstart, .565*height-tickSpacing, yTickend, .565*height-tickSpacing);
+  line(yTickstart, .4875*height-tickSpacing, yTickend, .4875*height-tickSpacing);
+  line(yTickstart, .410*height-tickSpacing, yTickend, .410*height-tickSpacing);
+  line(yTickstart, .3325*height-tickSpacing, yTickend, .3325*height-tickSpacing);
+  line(yTickstart, .255*height-tickSpacing, yTickend, .255*height-tickSpacing);
+  line(yTickstart, .1775*height-tickSpacing, yTickend, .1775*height-tickSpacing);
+
+
+  //The right most y axis line
+  rect(.895*width, .100*height, .001*width, .775*height);
+
+
+
+  //Top x axis line
+  rect(.120*width, xTickstart, .775*width, .001*height);
+
+
+
+
+  //0 mark applied to both axis
+  text(0, yTextpos+.020*width, .879*height);
+
+
+  //Y axis labels
+  text(4000, yTextpos, .8015*height);
+  text(8000, yTextpos, .724*height);
+  text(12000, yTextpos, .6465*height);
+  text(16000, yTextpos, .569*height);
+  text(20000, yTextpos, .4915*height);
+  text(24000, yTextpos, .414*height);
+  text(28000, yTextpos, .3365*height);
+  text(32000, yTextpos, .259*height);
+  text(36000, yTextpos, .1815*height);
+  text(40000, yTextpos, .104*height);
+}
+
+
+
+
+void draw () {
+  //draws the white rectangle around graph
+  stroke(0);
+  fill(255);
+  rect(.120*width, .100*height, .775*width, .775*height);
+
+
+
+for (int i=0; i<particles.length; i++) {
+  particles[i].update();
+  fill(255/(i+1.0));
+  ellipse(.775*width*(i+1.0)/4.0+.023*width,775+particles[i].scale(),10*(i+1),10*(i+1));
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //colors the triangle brown
+  stroke(0);
+  fill(108, 54, 13);
+  //draws triangle that represents vent
+  triangle(.508*width, .876*height, .408*width, height, .608*width, height);
+}
+
+class particle {
+  float dens, diam, v;
+  float y;
+  float g, M;
+
+  particle(float dens, float diam) {
+    y=40000;
+    //yConstrain = constrain(y, 0, 40000);
+    g=9.8;
+    M=.000018325;
+    this.dens=dens;
+    this.diam=diam;
+    this.v=dens*g*diam*diam/(18.0*M);
+    println(dens);
+    println(diam);
+    println(v);
+     println(y);
+      println(g);
+       println(M);
+       println();
+    
+   
+  }
+
+  void update() {
+   if (y>0) {
+    y-=v;
+   }
+   
+  }
+
+  int scale() {
+    return parseInt(-1*y/40000.0*.775*height+.100*height);
+  }
+}
+
