@@ -1,0 +1,196 @@
+
+//the following scale units are global
+//they map the screen units into kilometers (for the geophysics)
+//how do screen units scale to depth (km) and x(km)
+float incl_vec, ia, theta, dip_angle=-PI/2, jx, jz, a, b, T, J_intensity=400;
+int dec_vec=0, x, half_width=2, depth=50;
+int x_zero = 50;
+int x_scale = 100; //1 km = 50 screen units
+int depth_zero = 200; //where the depth axis starts in screen units
+int depth_scale = 100; //keep vert exaggeration 1:1
+int mgal_zero = 170;  //less than depth_zero 
+int mgal_scale = 10;
+
+void setup() {
+  size(640, 480);
+   incl_vec=0;
+}
+
+void draw() {
+
+  float gravity = 0.0;
+  float x1km, x2km, y1km, y2km, density_contrast;
+  float del_grav;
+  int  i2, offset;
+  int x1, x2, z1, z2, m;
+  background(153);
+
+
+  //draw the axes
+  drawAxes(x_zero, x_scale, depth_zero, depth_scale);
+   arrow(width/2, height/2, 50, incl_vec);
+
+  /* ia is the component of the inclination of the 
+   vector of magnetization in the direction of x */
+  ia = atan2(tan(incl_vec), sin(dec_vec));
+
+  /* theta is the angle between the dipping 
+   dike and the inclination of the vector of 
+   magnetization projected in the x direction */
+  theta = dip_angle - ia; 
+
+  /* compute the components of magnetization wrt theta */
+  jx = J_intensity*sin(theta);
+  jz = J_intensity*cos(theta);
+
+  for (int i = 0; i <= 2000; i++) {
+
+    x = ( i - 1000) * 10;
+    a = -2.0*half_width*(jx*sin(incl_vec) + jz*cos(incl_vec)*sin(dec_vec));
+    b = 2.0*half_width*(-jx*cos(incl_vec)*sin(dec_vec) + jz*sin(incl_vec));
+
+    T = (a*x + b*depth)/(x*x + depth*depth);
+    println(T);
+  }
+   for (offset=x_zero; offset<width; offset+=25) { //count in screen units
+
+
+    // convert gravity to integer
+
+    del_grav = gravity*float(mgal_scale);
+    m = mgal_zero - int(del_grav);
+    // plot point
+    ellipse(offset, T, 10, 10); 
+    gravity = 0.0; //set gravity to zero for next point
+  }
+}
+
+void arrow(float x, float y, int len, float angle) {
+  pushMatrix();
+  translate(x, y);
+  rotate(angle);
+  line(0, 0, len, 0);
+  line(len, 0, len - 6, -6);
+  line(len, 0, len - 6, 6);
+  popMatrix();
+}
+
+void mouseDragged() {
+  incl_vec=constrain(atan((mouseY-height/2.0)/(mouseX-width/2.0)), -QUARTER_PI, QUARTER_PI);
+}
+
+
+boolean overRect(int x, int y, int width, int height) {
+  if (mouseX >= x && mouseX <= x+width && 
+    mouseY >= y && mouseY <= y+height) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+int lock(int val, int minv, int maxv) { 
+  return  min(max(val, minv), maxv);
+} 
+
+void drawAxes(int x_zero, int x_scale, int depth_zero, int depth_scale) {
+  fill(0);
+  PFont f = createFont("Arial", 12);
+  textFont(f);
+  //draw and label depth axis
+  textAlign(RIGHT);
+  for (int i = 0; i< 8; i++) {
+    int d= i*depth_scale + depth_zero;
+    line(x_zero, d, x_zero-10, d);
+    text(i, x_zero-12, d+5);
+  }
+
+  //draw and label mgal axis
+  textAlign(RIGHT);
+  for (int i = 0; i< 8; i++) {
+    int d= (mgal_zero - 2*i*mgal_scale);
+    line(x_zero, d, x_zero-10, d);
+    text(i*2, x_zero-12, d+5);
+  }
+  //draw label the horizontal axis
+  textAlign(CENTER);
+  for (int i = 0; i<12; i++) {
+    int x=i*x_scale + x_zero;
+    line(x, depth_zero-35, x, depth_zero-25);
+    line(x, depth_zero-5, x, depth_zero+5);
+    int x_value =  i;
+    text(x_value, x, depth_zero-10);
+  }
+  // rotate(3.14159/2.0);
+  textAlign(CENTER);
+  text("d (km)", 75, 350);
+  text("x (km)", 500, depth_zero+25);
+  text("g (mgal)", 75, 90);
+
+  stroke(255);
+  fill(255);
+  //depth arrow
+  line(75, 360, 75, 400);
+  triangle(70, 400, 80, 400, 75, 425);
+  //horiontal arrow
+  line(520, depth_zero+20, 555, depth_zero+20);
+  triangle(555, depth_zero+15, 555, depth_zero+25, 580, depth_zero+20);
+  //mgal arrow
+  line(75, 80, 75, 40);
+  triangle(70, 40, 80, 40, 75, 15);
+  stroke(0);
+  fill(0);
+}
+
+
+//float talwani (float x1, float x2, float z1, float z2, float del_density){
+//
+//  float g;
+//  float denom;
+//  float alpha;
+//  float beta; 
+//  float factor;
+//  float r1sq;
+//  float r2sq;
+//  float term1;
+//  float term2;
+//  float zz;
+//  float grav;
+//  
+///*calculate the gravity
+//anomaly associated with one side of a 2D
+//polygon (viewed in cross section and infinite
+//in and out of plane of screen)
+//
+//assume that integration is clockwise
+//
+//distance units in meters
+//returns mgal
+//*/
+////define consts.
+//g=9.8;
+//
+////avoid singularites
+//if (x1 == 0.0) {x1=1;}
+//if (x2 == 0.0) {x2=1;}
+//if ((x2-x1)==0.0) {x2 = x1 - 0.0001;}
+//denom = z2-z1;
+//if (denom == 0.0){denom = 1.0e-6;}
+//
+//
+//alpha = (x2-x1)/denom;
+//beta = (x1*z2-x2*z1)/denom;
+//factor = beta/(1+alpha*alpha);
+//
+// r1sq = (x1*x1 + z1 *z1);
+//r2sq = (x2*x2 + z2 *z2);
+//
+//term1 = 0.5*(log(r2sq) - log(r1sq));
+//term2 = atan2(z2,x2)-atan2(z1,x1);
+//
+//zz = factor*(term1-alpha*term2);
+//
+//grav = 2*g*del_density*zz*1.0e5;
+//
+//return grav; //return gravity in mgal
+//}
