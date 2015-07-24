@@ -1,0 +1,256 @@
+//This wind speed and direction tool graphs the height, direction, and velocity of sample wind data and shows what is put into Tephra2.
+//The direction is measured in degrees from north and it's blowing towards the direction specified.
+//This tool was created by Joshua Abbatiello from the University of South Florida and Emily Drobes from Florida State University.
+
+Handle[] handles;
+//starting x pos of where y ticks start
+int yTickstart=80;
+//Ending x position of where the y ticks end
+int yTickend=70;
+//Starting y position of where the x ticks start
+int xTickstart=740;
+//Ending y position of where the x ticks end
+int xTickend=750;
+//Amount subtracted or added between ticks
+int tickSpacing=72;
+//Y position of the text on the x axis
+int xTextpos=770;
+//X position of the text on the y axis
+int yTextpos=50;
+//multiplied by velocity to scale to graph
+float velScaling=7.2;
+//added to velocity to move arrows onto graph
+int velMove=81;
+//height-260 this accounts for y being read from the top
+float eleMove=740;
+//multiplied by elevation & then subtracted from eleMove to scale to the graph because y is read backwards 
+float eleScaling=.0144;
+//makes degrees start from north
+float deg=90;
+float angle;
+
+void setup() {
+  size(1000, 1000);
+  background(203, 203, 203);
+
+  fill(0);
+  //X axis line (velocity)
+  line(80, xTickstart, 800, xTickstart);
+  //X axis tick marks (0-100)
+  line(80, xTickstart, 80, xTickend);
+  line(80+tickSpacing, xTickstart, 80+tickSpacing, xTickend);
+  line(152+tickSpacing, xTickstart, 152+tickSpacing, xTickend);
+  line(224+tickSpacing, xTickstart, 224+tickSpacing, xTickend);
+  line(296+tickSpacing, xTickstart, 296+tickSpacing, xTickend);
+  line(368+tickSpacing, xTickstart, 368+tickSpacing, xTickend);
+  line(440+tickSpacing, xTickstart, 440+tickSpacing, xTickend);
+  line(512+tickSpacing, xTickstart, 512+tickSpacing, xTickend);
+  line(584+tickSpacing, xTickstart, 584+tickSpacing, xTickend);
+  line(656+tickSpacing, xTickstart, 656+tickSpacing, xTickend);
+  line(728+tickSpacing, xTickstart, 728+tickSpacing, xTickend);
+  //Y axis line (elevation)
+  line(yTickstart, 20, yTickstart, 800);
+  //Y axis tick marks (0-50000)
+  line(yTickstart, 740, yTickend, 740);
+  line(yTickstart, 740-tickSpacing, yTickend, 740-tickSpacing);
+  line(yTickstart, 668-tickSpacing, yTickend, 668-tickSpacing);
+  line(yTickstart, 596-tickSpacing, yTickend, 596-tickSpacing);
+  line(yTickstart, 524-tickSpacing, yTickend, 524-tickSpacing);
+  line(yTickstart, 452-tickSpacing, yTickend, 452-tickSpacing);
+  line(yTickstart, 380-tickSpacing, yTickend, 380-tickSpacing);
+  line(yTickstart, 308-tickSpacing, yTickend, 308-tickSpacing);
+  line(yTickstart, 236-tickSpacing, yTickend, 236-tickSpacing);
+  line(yTickstart, 164-tickSpacing, yTickend, 164-tickSpacing);
+  line(yTickstart, 92-tickSpacing, yTickend, 92-tickSpacing);
+  //labels
+  textAlign(CENTER, BOTTOM);
+  pushMatrix();
+  translate(height-980, height-610);
+  rotate(-HALF_PI);
+  text("Elevation (masl)", 0, 0);
+  popMatrix();
+  text("velocity (m/s)", width-560, height-210);
+  //0 mark
+  text(0, 65, 770);
+  //X labels
+  text(10, 152, xTextpos);
+  text(20, 224, xTextpos);
+  text(30, 296, xTextpos);
+  text(40, 368, xTextpos);
+  text(50, 440, xTextpos);
+  text(60, 512, xTextpos);
+  text(70, 584, xTextpos);
+  text(80, 656, xTextpos);
+  text(90, 728, xTextpos);
+  text(100, 800, xTextpos);
+  //Y labels
+  text(5000, yTextpos, 673);
+  text(10000, yTextpos, 601);
+  text(15000, yTextpos, 529);
+  text(20000, yTextpos, 457);
+  text(25000, yTextpos, 385);
+  text(30000, yTextpos, 313);
+  text(35000, yTextpos, 241);
+  text(40000, yTextpos, 169);
+  text(45000, yTextpos, 97);
+  text(50000, yTextpos, 25);
+  //bottom text labels
+  text("Ele(MASL)", 80, 810);
+  text("Vel(M/S)", 180, 810);
+  text("Deg(From North)", 280, 810);
+
+  //handles is name for moving arrows
+  handles = new Handle[9];
+  for (int i=0; i<handles.length; i++) {
+    // (float ix, float iy, int il, int is, float scroll, Handle[] o, float vel)
+    handles[i] = new Handle(81, eleMove-((100+6000*i)*eleScaling), parseInt((2+i)*velScaling), 10, (10+14*i)-deg, handles, 10+14*i);
+  }
+}
+
+void draw() {
+  noStroke();
+  fill(255);
+  //Rectangle around updating data
+  rect(60, 820, 300, displayHeight);
+  stroke(0);
+  strokeWeight(1);
+  //Rect around graph
+  rect(81, 20, 720, 720);
+  fill(0);
+  //draws handles 
+  for (int i = 0; i < handles.length; i++) {
+    handles[i].update();
+    handles[i].display();
+    //bottom text
+    //updating velocity
+    text(2+i, 180, 830+i*10); 
+    //elevation
+    text(100+6000*i, 80, 830+i*10);
+    //degrees
+    text(10+14*i, 280, 830+i*10);
+  }
+}
+
+void mouseReleased() {
+  for (int i = 0; i < handles.length; i++) {
+    handles[i].releaseEvent();
+  }
+}
+
+class Handle {
+
+  float x, y, boxx, boxy, angle, velocity;
+  int stretch, size;
+  boolean over, press, locked = false, otherslocked = false;
+  Handle[] others;
+
+  Handle(float ix, float iy, int il, int is, float scroll, Handle[] o, float vel) {
+    x = ix;
+    y = iy;
+    stretch = il;
+    size = is;
+    boxx = x;
+    boxy = y;
+    translate(x, y);
+    angle= scroll;
+    rotate(angle);
+    others = o;
+    velocity=vel;
+  }
+
+  void update() {
+    //controls screen position of arrows
+    boxx = x+stretch;
+    boxy = y - size/2;
+
+    //locks
+    for (int i=0; i<others.length; i++) {
+      if (others[i].locked == true) {
+        otherslocked = true;
+        break;
+      } else {
+        otherslocked = false;
+      }
+    }
+    //allows overEvent and pressEvent to occur if other handles aren't locked
+    if (otherslocked == false) {
+      overEvent();
+      pressEvent();
+    }
+    //controls how arrow moves accross screen
+    if (press) {
+      //(x pos of arrow relative to mouse, min handle pos, max handle pos)
+      stretch = lock(mouseX-81-size/2, 0, 700 );
+    }
+  }
+
+  //if the mouse is over ellipse surrounding arrow, overEvent is called for
+  void overEvent() {
+    if (overEllipse(boxx+10, boxy, 60, 60)) {
+      over = true;
+    } else {
+      over = false;
+    }
+  }
+
+  //if mouse is over arrow and pressed, arrow is locked
+  void pressEvent() {
+    if (over && mousePressed) {
+      press = true;
+      locked = true;
+    } else {
+      press = false;
+    }
+  }
+
+  //when mouse is released arrow is unlocked
+  void releaseEvent() {
+    locked = false;
+    velocity=parseInt(stretch/velScaling);
+  }
+
+  //arrow function
+  void arrow(float arrowx, float arrowy, int len, float angle) {
+    pushMatrix();
+    translate(arrowx, arrowy);
+    rotate(radians(angle));
+    float rad = PI/4;
+    float deg = degrees(rad);
+    line(0, 0, len, 0);
+    line(len, 0, len - 15, -15);
+    line(len, 0, len - 15, 15);
+    popMatrix();
+  }
+
+  void display() {
+    //keep the arrows within graph
+    if (boxx<86) {
+      boxx=86;
+    }
+    if (boxy>726) {
+      boxy=726;
+    }
+    strokeWeight(4);
+    //arrows turn red when over
+    if (over) {
+      stroke(255, 0, 0);
+    } else {
+      stroke(0);
+    }
+    //arrows are drawn
+    arrow(boxx, boxy, 40, angle);
+  }
+}
+
+boolean overEllipse(float x, float y, float w, float h) {
+  if (mouseX >= x-.5*w && mouseX <= x+.5*w && 
+    mouseY >= y-.5*h && mouseY <= y+.5*h) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+int lock(int val, int minv, int maxv) { 
+  return  min(max(val, minv), maxv);
+} 
