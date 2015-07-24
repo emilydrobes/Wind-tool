@@ -1,0 +1,360 @@
+//This wind speed and direction tool graphs the height, direction, and velocity of wind from a csv file and shows what is put into Tephra2. The direction is measured in degrees from north and it's blowing towards the direction specified.
+//This tool was created by Joshua Abbatiello from the University of South Florida and Emily Drobes from Florida State University.
+//Starting x position of where the y ticks start
+
+//handle object
+
+Handle[] handles;
+
+
+int yTickstart=80;
+//Ending x position of where the y ticks end
+int yTickend=70;
+//Starting y position of where the x ticks start
+int xTickstart=740;
+//Ending y position of where the x ticks end
+int xTickend=750;
+//Amount subtracted or added between ticks
+int tickSpacing=72;
+//Y position of the text on the x axis. xTickend+20
+int xTextpos=770;
+//X position of the text on the y axis. yTickend-20
+int yTextpos=50;
+//This value is multiplied by the velocity values to fit with the pixel size of the graph
+float velScaling=7.2;
+//This value is added to the velocity values to move the arrows onto the graph
+int velMove=81;
+//This value is the height-260 this accounts the y being read from the top
+float eleMove=740;
+//This value is multiplied by elevation and then subtracted from eleMove to scale to the graph and because the y's are read backwards 
+float eleScaling=.0144;
+//This corrects the degrees to start from north
+float deg=90;
+float angle;
+//Table object
+Table table;
+
+void setup() {
+
+  //setup for handles
+  //handles is group name for arrows
+  handles = new Handle[14];
+
+
+  //table = loadTable("Wind data.txt", "header,tsv");
+
+  //Advanced for loop to graph each point from the text file
+  for (int i=0; i<handles.length; i++) {
+//    int Ele0= row.getInt("Ele");
+//    float Vel0= row.getFloat("Vel");
+//
+//    int Deg0= row.getInt("Deg");
+    //variable for the scrolling function
+    //    float scroll = Deg0-deg;
+    handles[i] = new Handle(81, eleMove-((100+3800*i)*eleScaling), parseInt((1.5+i)*velScaling), 10, (10+10*i)-deg, handles, 10+10*i);
+  }
+
+
+  //adds MouseWheelListener
+//  addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+//    public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) {
+//      mouseWheel(evt.getWheelRotation());
+//    }
+//  }
+//  );
+
+
+  size(1000, 1000);
+  background(203, 203, 203);
+  smooth();
+  //The fill makes it so the labels on the axis can be seen
+  fill(0);
+  //This alligns the Y axis text to the center and rotates it 
+  textAlign(CENTER, BOTTOM);
+  pushMatrix();
+  translate(height-980, height-610);
+  rotate(-HALF_PI);
+  text("Elevation (masl)", 0, 0);
+  popMatrix();
+  PFont font;
+  // The font must be located in the sketch's 
+  // "data" directory to load successfully 
+
+  font = loadFont("ArialMT-12.vlw");
+  textFont(font, 13);
+  text("velocity (m/s)", width-560, height-210);
+  fill(0);
+
+  //X axis line (velocity)
+  rect(80, xTickstart, width-280, height-999);
+  //X axis tick marks (0-100)
+  line(80, xTickstart, 80, xTickend);
+  line(80+tickSpacing, xTickstart, 80+tickSpacing, xTickend);
+  line(152+tickSpacing, xTickstart, 152+tickSpacing, xTickend);
+  line(224+tickSpacing, xTickstart, 224+tickSpacing, xTickend);
+  line(296+tickSpacing, xTickstart, 296+tickSpacing, xTickend);
+  line(368+tickSpacing, xTickstart, 368+tickSpacing, xTickend);
+  line(440+tickSpacing, xTickstart, 440+tickSpacing, xTickend);
+  line(512+tickSpacing, xTickstart, 512+tickSpacing, xTickend);
+  line(584+tickSpacing, xTickstart, 584+tickSpacing, xTickend);
+  line(656+tickSpacing, xTickstart, 656+tickSpacing, xTickend);
+  line(728+tickSpacing, xTickstart, 728+tickSpacing, xTickend);
+
+
+
+
+  //fill(0);
+  //Y axis line (elevation)
+  rect(yTickstart, 20, width-999, height-280);
+  //Y axis tick marks (0-50000)
+  line(yTickstart, 740, yTickend, 740);
+  line(yTickstart, 740-tickSpacing, yTickend, 740-tickSpacing);
+  line(yTickstart, 668-tickSpacing, yTickend, 668-tickSpacing);
+  line(yTickstart, 596-tickSpacing, yTickend, 596-tickSpacing);
+  line(yTickstart, 524-tickSpacing, yTickend, 524-tickSpacing);
+  line(yTickstart, 452-tickSpacing, yTickend, 452-tickSpacing);
+  line(yTickstart, 380-tickSpacing, yTickend, 380-tickSpacing);
+  line(yTickstart, 308-tickSpacing, yTickend, 308-tickSpacing);
+  line(yTickstart, 236-tickSpacing, yTickend, 236-tickSpacing);
+  line(yTickstart, 164-tickSpacing, yTickend, 164-tickSpacing);
+  line(yTickstart, 92-tickSpacing, yTickend, 92-tickSpacing);
+
+  //0 mark applied to both axis
+  text(0, 65, 770);
+  //X axis labels
+  text(10, 152, xTextpos);
+  text(20, 224, xTextpos);
+  text(30, 296, xTextpos);
+  text(40, 368, xTextpos);
+  text(50, 440, xTextpos);
+  text(60, 512, xTextpos);
+  text(70, 584, xTextpos);
+  text(80, 656, xTextpos);
+  text(90, 728, xTextpos);
+  text(100, 800, xTextpos);
+  //Y axis labels
+  text(5000, yTextpos, 673);
+  text(10000, yTextpos, 601);
+  text(15000, yTextpos, 529);
+  text(20000, yTextpos, 457);
+  text(25000, yTextpos, 385);
+  text(30000, yTextpos, 313);
+  text(35000, yTextpos, 241);
+  text(40000, yTextpos, 169);
+  text(45000, yTextpos, 97);
+  text(50000, yTextpos, 25);
+}
+
+void draw() {
+  fill(255);
+  noStroke();
+  //Rectangle around updating data
+  rect(60, 780, 300, displayHeight);
+stroke(0);
+strokeWeight(1);
+  //Rectangle around graph
+  rect(81, 20, 720, 720);
+  fill(0);
+  stroke(0);
+  text("Ele(MASL)", 80, 810);
+  text("Vel(M/S)", 180, 810);
+  text("Deg(From North)", 280, 810);
+
+  //draws handles 
+  for (int i = 0; i < handles.length; i++) {
+
+    handles[i].update();
+    handles[i].display();
+    //Allows for the updating text for velocity
+    text(handles[i].velocity, 180, 830+i*10);
+    //ellipse(handles[i].x,handles[i].y, 10,10);
+  }
+  //Gets the information for the starting elevation and degrees
+ for (int i=0; i<handles.length; i++) {
+
+
+    text(150+1500*i, 80, 830+i*10);
+    text(20+7*i, 280, 830+i*10);
+    fill(0);
+  }
+}
+
+
+//stuff for handles
+//allows the user to release the handle that was clicked on
+void mouseReleased() {
+  for (int i = 0; i < handles.length; i++) {
+    handles[i].releaseEvent();
+  }
+}
+
+class Handle {
+
+  float x, y;
+  float boxx, boxy;
+  int stretch;
+  int size;
+  boolean over;
+  boolean press;
+  boolean locked = false;
+  boolean otherslocked = false;
+  float angle;
+  float velocity;
+  Handle[] others;
+
+  Handle(float ix, float iy, int il, int is, float scroll, Handle[] o, float vel) {
+    x = ix;
+    y = iy;
+    stretch = il;
+    size = is;
+    boxx = x;
+    boxy = y;
+    translate(x, y);
+    angle= scroll;
+    rotate(radians(angle));
+    float rad = PI/4;
+    float deg = degrees(rad);
+    others = o;
+    velocity=vel;
+  }
+
+  void update() {
+    //controls screen position of the arrows
+    boxx = x+stretch;
+    boxy = y - size/2;
+    //    rotate(radians(angle));
+    //    float rad = PI/4;
+    //    float deg = degrees(rad);
+    //    angle = deg;
+
+
+
+
+
+    //If they're locked, they're locked; if they're not, they're not
+    for (int i=0; i<others.length; i++) {
+      if (others[i].locked == true) {
+        otherslocked = true;
+        break;
+      } else {
+        otherslocked = false;
+      }
+    }
+
+
+
+    //  if(locked = true) {
+    //   
+    //  } 
+
+    //when the mouse is over a handle or pressed, the handle is locked
+    if (otherslocked == false) {
+      overEvent();
+      pressEvent();
+    }
+
+
+    //controls how the arrow moves accross the screen
+    if (press) {
+      //(position of arrow relative to mouse, min handle pos, max handle pos)
+      stretch = lock(mouseX-81-size/2, 0, 700 );
+
+
+//          scroll+= delta*5;
+    }
+  }
+  //if the mouse is over the box surrounding the arrow, overEvent is called for
+  
+ 
+    
+  void overEvent() {
+//     if (this.angle > 0) {
+    if (overEllipse(boxx+10, boxy, 60, 60)) {
+      over = true;
+    } //}
+//    if (this.angle <= 0) {
+//    if (overEllipse(boxx-20, boxy+20, boxx+50, boxy-40)) {
+//      over = true;
+//    } }
+    else {
+      over = false;
+    }
+     
+  }
+
+  //if the mouse is over the arrow and pressed, the arrow is locked
+  void pressEvent() {
+    //    if (over && mousePressed || locked) {
+    if (over && mousePressed) {
+      press = true;
+      locked = true;
+    } else {
+      press = false;
+    }
+  }
+
+  //when the mouse is released the arrow is unlocked
+  void releaseEvent() {
+    locked = false;
+    velocity=parseInt(stretch/velScaling);
+  }
+
+  //This sets up a function to draw an arrow based on the coordinates and angles specified
+  void arrow(float arrowx, float arrowy, int len, float angle) {
+    pushMatrix();
+    translate(arrowx, arrowy);
+    rotate(radians(angle));
+    float rad = PI/4;
+    float deg = degrees(rad);
+    line(0, 0, len, 0);
+    line(len, 0, len - 15, -15);
+    line(len, 0, len - 15, 15);
+    popMatrix();
+  }
+
+  void display() {
+    //logic statements that keep the arrows within the rectangle of the graph
+    if (boxx<86) {
+      boxx=86;
+    }
+    if (boxy>726) {
+      boxy=726;
+    }
+    stroke(0);
+    strokeWeight(4);
+    //This is where the arrows are drawn
+    fill(255);
+//    ellipseMode(CORNERS);
+//    ellipse(boxx-45-abs(angle), boxy-45-abs(angle), boxx+45-abs(angle), boxy+45-abs(angle));
+ellipse(boxx+10, boxy, 60, 60);
+    arrow(boxx, boxy, 40, angle);
+    if (over) {
+      //      line(boxx, boxy, boxx+size, boxy+size);
+      //      line(boxx, boxy+size, boxx+size, boxy);
+      stroke(255, 0, 0);
+      arrow(boxx, boxy, 40, angle);
+    }
+  }
+
+//       void mouseWheel(MouseEvent e) {
+//         float delta;
+//       float scroll = Deg0-deg;
+//    boolean locked;
+//       if(over && mousePressed){
+//         scroll+= delta*5;
+//       } 
+//    }
+}
+
+boolean overEllipse(float x, float y, float w, float h) {
+  if (mouseX >= x-w && mouseX <= x+w && 
+    mouseY >= y-h && mouseY <= y+h) {
+    return true;
+} else {
+    return false;
+  }
+}
+
+int lock(int val, int minv, int maxv) { 
+  return  min(max(val, minv), maxv);
+} 
