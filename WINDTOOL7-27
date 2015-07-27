@@ -3,6 +3,8 @@
 //This tool was created by Joshua Abbatiello from the University of South Florida and Emily Drobes from Florida State University.
 
 Handle[] handles;
+int[] velocities;
+
 //starting x pos of where y ticks start
 int yTickstart=80;
 //Ending x position of where the y ticks end
@@ -101,9 +103,11 @@ void setup() {
 
   //handles is name for moving arrows
   handles = new Handle[9];
+  velocities = new int[handles.length];
   for (int i=0; i<handles.length; i++) {
+    velocities[i] = 2*i+1;
     // (float ix, float iy, int il, int is, float scroll, Handle[] o, float vel)
-    handles[i] = new Handle(81, eleMove-((100+6000*i)*eleScaling), parseInt((2+i)*velScaling), 10, (10+14*i)-deg, handles, 10+14*i);
+    handles[i] = new Handle(81, eleMove-((100+6000*i)*eleScaling), parseInt(velToPixels(velocities[i])), 10, (10+14*i)-deg, handles, 10+14*i);
   }
 }
 
@@ -121,9 +125,10 @@ void draw() {
   for (int i = 0; i < handles.length; i++) {
     handles[i].update();
     handles[i].display();
+    velocities[i] = pixelsToVel(parseInt(handles[i].stretch));
     //bottom text
     //updating velocity
-    text(2+i, 180, 830+i*10); 
+    text(velocities[i], 180, 830+i*10); 
     //elevation
     text(100+6000*i, 80, 830+i*10);
     //degrees
@@ -230,7 +235,7 @@ class Handle {
     if (boxy>726) {
       boxy=726;
     }
-    strokeWeight(4);
+    strokeWeight(2);
     //arrows turn red when over
     if (over) {
       stroke(255, 0, 0);
@@ -253,4 +258,11 @@ boolean overEllipse(float x, float y, float w, float h) {
 
 int lock(int val, int minv, int maxv) { 
   return  min(max(val, minv), maxv);
-} 
+}
+int velToPixels(int vel) {
+  return parseInt(vel/100.*.720*width+.081*width);
+}
+int pixelsToVel(int velPixels) {
+  println(velPixels);
+  return parseInt((velPixels-.081*width)/.720/width*100);
+}
