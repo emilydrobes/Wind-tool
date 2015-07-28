@@ -3,7 +3,6 @@
 //This tool was created by Joshua Abbatiello from the University of South Florida and Emily Drobes from Florida State University.
 
 Handle[] handles;
-int[] velocities;
 
 //starting x pos of where y ticks start
 int yTickstart=80;
@@ -33,7 +32,7 @@ float angle;
 
 void setup() {
   size(1000, 1000);
-  background(203, 203, 203);
+  background(203);
 
   fill(0);
   //X axis line (velocity)
@@ -97,42 +96,41 @@ void setup() {
   text(45000, yTextpos, 97);
   text(50000, yTextpos, 25);
   //bottom text labels
-  text("Ele(MASL)", 80, 810);
-  text("Vel(M/S)", 180, 810);
-  text("Deg(From North)", 280, 810);
+  text("Ele(MASL)", 300, 850);
+  text("Vel(M/S)", 400, 850);
+  text("Deg(From North)", 500, 850);
 
   //handles is name for moving arrows
   handles = new Handle[9];
-  velocities = new int[handles.length];
   for (int i=0; i<handles.length; i++) {
-    velocities[i] = 2*i+1;
-    // (float ix, float iy, int il, int is, float scroll, Handle[] o, float vel)
-    handles[i] = new Handle(81, eleMove-((100+6000*i)*eleScaling), parseInt(velToPixels(velocities[i])), 10, (10+14*i)-deg, handles, 10+14*i);
+    // (float ix, float iy, int is, float scroll, Handle[] o, float vel)
+    handles[i] = new Handle(81, eleMove-((100+6000*i)*eleScaling), 10, (10+14*i)-deg, handles, 2*i+1);
   }
 }
 
 void draw() {
   noStroke();
-  fill(255);
+  fill(203);
   //Rectangle around updating data
-  rect(60, 820, 300, displayHeight);
+  rect(215, 860, 300, displayHeight);
+  rect(.801*width,.020*height, width, .720*height);
   stroke(0);
   strokeWeight(1);
   //Rect around graph
+  fill(255);
   rect(81, 20, 720, 720);
   fill(0);
   //draws handles 
   for (int i = 0; i < handles.length; i++) {
     handles[i].update();
     handles[i].display();
-    velocities[i] = pixelsToVel(parseInt(handles[i].stretch));
     //bottom text
     //updating velocity
-    text(velocities[i], 180, 830+i*10); 
+    text((int)handles[i].velocity, 400, 875+i*10); 
     //elevation
-    text(100+6000*i, 80, 830+i*10);
+    text(100+6000*i, 300, 875+i*10);
     //degrees
-    text(10+14*i, 280, 830+i*10);
+    text(10+14*i, 500, 875+i*10);
   }
 }
 
@@ -149,18 +147,18 @@ class Handle {
   boolean over, press, locked = false, otherslocked = false;
   Handle[] others;
 
-  Handle(float ix, float iy, int il, int is, float scroll, Handle[] o, float vel) {
+  Handle(float ix, float iy, int is, float scroll, Handle[] o, float vel) {
     x = ix;
     y = iy;
-    stretch = il;
+    this.velocity=vel;
+    stretch = velToPixels((int)this.velocity);
     size = is;
     boxx = x;
     boxy = y;
-    translate(x, y);
+//    translate(x, y);
     angle= scroll;
     rotate(angle);
     others = o;
-    velocity=vel;
   }
 
   void update() {
@@ -211,7 +209,7 @@ class Handle {
   //when mouse is released arrow is unlocked
   void releaseEvent() {
     locked = false;
-    velocity=parseInt(stretch/velScaling);
+    velocity=parseInt(stretch/.720/width*100);
   }
 
   //arrow function
@@ -260,7 +258,7 @@ int lock(int val, int minv, int maxv) {
   return  min(max(val, minv), maxv);
 }
 int velToPixels(int vel) {
-  return parseInt(vel/100.*.720*width+.081*width);
+  return parseInt(vel/100.*.720*width/*+.081*width*/);
 }
 int pixelsToVel(int velPixels) {
   println(velPixels);
