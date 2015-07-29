@@ -1,18 +1,17 @@
 //final int minX=-0, maxX=100, minY=-100, maxY=100;
-float inclination=30;
-int halfWidth=75, depth=50, scaledHalfWidth;
+int dipAngle;
+float inclination=PI/2, halfWidth, scaledHalfWidth, depth;
 
 Point[] points;
 Slider wid;
 Slider dep;
+Dike dike;
 
 void setup() {
   size(1000, 1000); 
   background(128);
   stroke(0);
   strokeWeight(4);
-  //x axis
-  line(.010*width, .75*height, .990*width, .75*height);
   //y axis
   line(.075*width, .010*height, .075*width, .990*height);
   //tick marks
@@ -20,7 +19,7 @@ void setup() {
   line(.060*width, .01*height, .075*width, .01*height);
   //labels
   textAlign(RIGHT);
-  text("-500", .060*width, .745*height);
+  text("-500", .060*width, .775*height);
   text("0", .058*width, .379*height);
   text("+500", .060*width, .014*height);
 
@@ -28,32 +27,39 @@ void setup() {
   textAlign(CENTER);
   text("nT", .020*width, .350*height);
   text("Depth", .020*width, .850*height);
-  text("Inclination of Vector of Magnetization", .875*width, .840*height);
+  text("Width (m)", .850*width, .860*height);
+    text("Depth (m)", .850*width, .920*height);
+
   text("S", .010*width, .765*height);
   text("N", .99*width, .765*height);
-  //dike
-  scaledHalfWidth = parseInt(halfWidth/1000.*.456*width);
-  fill(255, 0, 0);
-  rect(.535*width-scaledHalfWidth, depth/100.*.25*height+.75*height, scaledHalfWidth*2, scaledHalfWidth*2);
+    text("+500", .99*width, .775*height);
+
   points = new Point[100];
   for (int i=0; i<points.length; i++) {
     points[i] = new Point(parseInt(i-points.length/2.)*20, 0);
   }
   //must use parseInt() instead of (int)
-  wid=new Slider(parseInt(.800*width), parseInt(.880*height), parseInt(.100*width), parseInt(.030*height), 0, 100, 50);
-  dep=new Slider(parseInt(.800*width), parseInt(.940*height), parseInt(.100*width), parseInt(.030*height), 0, 100, 50);
+  wid=new Slider(parseInt(.800*width), parseInt(.870*height), parseInt(.100*width), parseInt(.030*height), 0, 100, 50);
+  dep=new Slider(parseInt(.800*width), parseInt(.930*height), parseInt(.100*width), parseInt(.030*height), 0, 100, 50);
+  halfWidth=wid.current/2;
+  scaledHalfWidth = parseInt(halfWidth/1000.*.456*width);
+  dike=new Dike(parseInt(.535*width-scaledHalfWidth), parseInt(depth/100.*.25*height+.75*height), parseInt(scaledHalfWidth*2), parseInt(.100*height)/*parseInt(scaledHalfWidth*2)*/, 0);
 }
 
 void draw() {
   noStroke();
   fill(128);
   //rect for graph
-  //rect(.079*width, 0, width-20, .746*height);
+  rect(.079*width, 0, width-20, .748*height);
 
+  dike.update();
   for (int i=0; i<points.length; i++) {
     points[i].update();
     points[i].display();
   }
+  //x axis
+  strokeWeight(4);
+  line(.010*width, .75*height, .990*width, .75*height);
 }
 //void mouseDragged() {
 //  inclination=constrain(atan((mouseY-.900*height)/abs(mouseX-.850*width)), -QUARTER_PI, QUARTER_PI);
@@ -61,7 +67,7 @@ void draw() {
 
 class Point {
   int  x, y, declination, scaledX;
-  float theta, jx, jz, a, b, T, J_intensity=200, dipAngle;
+  float theta, jx, jz, a, b, T, J_intensity=200;
   Point(int x, int y) {
     this.x=x;
     this.y=y;
@@ -70,11 +76,10 @@ class Point {
   void update() {
     /* ia is the component of the inclination of the 
      vector of magnetization in the direction of x */
-
     /* theta is the angle between the dipping 
      dike and the inclination of the vector of 
      magnetization projected in the x direction */
-    theta = dipAngle - atan2(tan(degrees(inclination)), sin(declination)); 
+    theta = dike.dipAngle - atan2(tan(degrees(inclination)), sin(declination)); 
 
     /* compute the components of magnetization wrt theta */
     jx = J_intensity*sin(theta);
@@ -84,7 +89,6 @@ class Point {
     a = -2.0*halfWidth*(jx*sin(degrees(inclination)) + jz*cos(degrees(inclination))*sin(declination));
     b = 2.0*halfWidth*(-jx*cos(degrees(inclination))*sin(declination) + jz*sin(degrees(inclination)));
     T = (float)(a*x + b*depth)/(x*x + depth*depth);
-    println(T);
     y = constrain(parseInt(.375*height-(T/1000.*.375*width)), 0, parseInt(.739*height));
     scaledX = parseInt(.535*width-x/1000.*.456*width);
   }
@@ -107,11 +111,12 @@ class Slider {
     this.max=max;
     current=initial;
     currentPixels=this.dataToPixels();
-    fill(51, 51, 204);
-    noStroke();
-    rect(x, y, w, h);
-    fill(0, 100, 0);
-    rect(x, y, currentPixels, h);
+    //    fill(51, 51, 204);
+    //    noStroke();
+    //    rect(x, y, w, h);
+    //    fill(0, 100, 0);
+    //    rect(x, y, currentPixels, h);
+    this.update();
   }
 
   boolean mouseOver() {
@@ -141,11 +146,45 @@ class Slider {
     return parseInt(current/(max-min)*w);
   }
 }
+class Dike {
+  int x, y, w, h, dipAngle;
+  Dike(int x, int y, int w, int h, int dipAngle) {
+    this.x= x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.dipAngle = dipAngle;
+  }
+  void update() {
+    if (y<.75*height+h/2) {
+      y=(int)(.75*height+h/2);
+    }
+    w=(int)wid.current;
+    halfWidth=wid.current/2;
+    //dike
+    scaledHalfWidth = parseInt(halfWidth/1000.*.456*width);
+    depth=dep.current;
+    rect(.079*width, .753*height, .68*width, height);
+    pushMatrix(); //push Matrix so we can rotate
+    translate(x, y+depth/100.*abs(height-y)+5); //translate to where you want it
+    rotate(radians(dipAngle)); //rotate the image 
+    fill(255, 0, 0);
+    rect(-w/2, -h/2, w, h);
+    popMatrix(); //don't forget to pop the matrix
+  }
+}
 void mouseDragged() {
   if (wid.mouseOver()) {
     wid.update();
   }
   if (dep.mouseOver()) {
     dep.update();
+  }
+}
+void keyPressed() {
+  if (keyCode == 37) { //arrows are coded so you can't call "key"
+    dike.dipAngle = constrain(--dike.dipAngle, -90, 90); //left arrow rotates one way
+  } else if (keyCode == 39) { 
+    dike.dipAngle = constrain(++dike.dipAngle, -90, 90); //right arrow rotates the other way
   }
 }
