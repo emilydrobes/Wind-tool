@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Calculate the Magnetic Anomaly of a Dike</title>
+<script src="processing.js"></script>
+<style type="text/css">
+#top,#content,#bottom,.separator{
+width:100%;
+}
+#top{
+height:20%;
+overflow-y:hidden;
+}
+#content{
+height:60%;
+max-height:1000px;
+overflow-y:scroll;
+}
+#bottom{
+height:18%;
+overflow-y:hidden;
+display:flex;
+justify-content:space-between;
+}
+.separator{
+height:1%;
+min-height:5px;
+background-color:darkgray;
+
+}
+.content{
+width:100%;
+height:100%;
+display:none;
+}
+
+</style>
+</head>
+<body>
+<div id="top">
+<h1 style="text-align:center;">Calculate the Magnetic Anomaly of a Dike</h1>
+<p>A method for calculating the magnetic anomaly over a thin igneous dike was originally proposed by Talwani and Heirtzler (1964) and re-implmented by Ku and Sharp (1983, Geophysics vol 48, p 754-774). The following Processing Applet is used to calculate the magnetic anomaly associated with a thin, dipping, magnetized dike. The magnetic anomaly is calculated along a profile perpendicular to the dike. 
+<br><br>In the inclination sketch the angle of inclination can be changed. In the changing dike sketch the width, depth, and dip of the dike can be changed.</p>
+</div>
+<div class="separator"></div>
+<div id="content">
+<div class="content" id="incSketch">
+<p>This tool allows the user to adjust the angle of the arrow in the bottom right of the screen. This changes the inclination vector which in turn changes the magnetic anomaly</p>
+<canvas data-processing-sources="magneticAnomalyForDikeInclanation/magneticAnomalyForDikeInclanation.pde"></canvas>
+</div>
+<div class="content" id="dikeSketch">
+<p>This tool allows the user to manipulate sliders to change the width and depth of the dike. The left and right arrow keys can be used to change the dip of the dike.</p>
+<canvas data-processing-sources="magAnomalyForDikeChange/magAnomalyForDikeChange.pde"></canvas>
+</div>
+<div class="content" id="incSrc">
+<p></p>
+<pre>
+//This tool was created by Emily Drobes from Florida State University and Joshua Abbatiello from the University of South Florida
+float inclination;
+int halfWidth=75, depth=50, scaledHalfWidth;
+
+Point[] points;
+
+void setup() {
+  size(900, 800); 
+  background(128);
+  stroke(0);
+  strokeWeight(4);
+    //x axis
+    line(.010*width, .75*height, .990*width, .75*height);
+    //y axis
+    line(.075*width, .010*height, .075*width, .990*height);
+    //tick marks
+    line(.060*width,.375*height,.075*width,.375*height);
+        line(.060*width,.01*height,.075*width,.01*height);
+        //labels
+        textAlign(RIGHT);
+        text("-500", .060*width, .775*height);
+        text("0", .058*width, .379*height);
+        text("+500", .060*width, .014*height);
+
+    //labels
+    textAlign(CENTER);
+    text("nT", .020*width, .350*height);
+    text("Depth", .020*width, .850*height);
+    text("Inclination of Vector of Magnetization", .875*width, .840*height);
+    text("S", .010*width, .765*height);
+    text("N", .99*width, .765*height);
+    text("+500", .975*width, .775*height);
+    //dike
+    scaledHalfWidth = parseInt(halfWidth/1000.*.456*width);
+    fill(255,0,0);
+    rect(.535*width-scaledHalfWidth, depth/100.*.25*height+.75*height, scaledHalfWidth*2, scaledHalfWidth*2);
+  points = new Point[100];
+  for (int i=0; i&ltpoints.length; i++) {
+    points[i] = new Point(parseInt(i-points.length/2.)*20, 0);
+  }
+}
+
+void draw() {
+  noStroke();
+  fill(128);
+  //rect for graph
+ rect(.079*width,0,width-20,.746*height);
+ //rect around arrow
+ rect(.800*width, .845*height, .125*width, .120*height);
+ stroke(255,0,0);
+ strokeWeight(2);
+ line(.800*width,.900*height,.900*width,.900*height);
+ line(.850*width,.850*height,.850*width,.950*height);
+ stroke(0);
+  arrow(.850*width, .900*height, parseInt(.050*width), inclination);
+
+  for (int i=0; i&ltpoints.length; i++) {
+    points[i].update();
+    points[i].display();
+  }
+}
+
+void arrow(float x, float y, int len, float angle) {
+  pushMatrix();
+  translate(x, y);
+  rotate(angle);
+  line(0, 0, len, 0);
+  line(len, 0, len - 6, -6);
+  line(len, 0, len - 6, 6);
+  popMatrix();
+  
+}
+
+void mouseDragged() {
+  inclination=constrain(atan((mouseY-.900*height)/abs(mouseX-.850*width)), -QUARTER_PI, QUARTER_PI);
+}
+
+class Point {
+  int  x, y, declination, scaledX;
+  float theta, jx, jz, a, b, T, J_intensity=200;
+  Point(int x, int y) {
+    this.x=x;
+    this.y=y;
+    this.declination=0;
+  }
+  void update() {
+    /* ia is the component of the inclination of the 
+     vector of magnetization in the direction of x */
+
+    /* theta is the angle between the dipping 
+     dike and the inclination of the vector of 
+     magnetization projected in the x direction */
+    theta = -HALF_PI - atan2(tan(degrees(inclination)), sin(declination)); 
+
+    /* compute the components of magnetization wrt theta */
+    jx = J_intensity*sin(theta);
+    jz = J_intensity*cos(theta);
+
+   
+    a = -2.0*halfWidth*(jx*sin(degrees(inclination)) + jz*cos(degrees(inclination))*sin(declination));
+    b = 2.0*halfWidth*(-jx*cos(degrees(inclination))*sin(declination) + jz*sin(degrees(inclination)));
+    T = (float)(a*x + b*depth)/(x*x + depth*depth);
+    y = constrain(parseInt(.375*height-(T/1000.*.375*width)), 0, parseInt(.739*height));
+    scaledX = parseInt(.535*width-x/1000.*.456*width);
+  }
+  void display() {
+    stroke(0);
+    strokeWeight(1);
+    fill(255);
+    ellipse(constrain(scaledX,.085*width,width), y, .010*width, .010*height);
+  }
+ 
+}
+
+//void drawAxes() {
+//  stroke(0);
+//  strokeWeight(4);
+//  //x axis
+//  line(10, abs((float)maxX)/(abs(maxX)+abs(minX))*(height-20), width-10, abs((float)maxX)/(abs(maxX)+abs(minX))*(height-20));
+//}
+
+</pre>
+<p></p>
+</div>
+<div class="content" id="dikeSrc">
+<p></p>
+<pre>
+//This tool was created by Joshua Abbatiello from the University of South Florida and Emily Drobes from Florida State University
+int dipAngle;
+float inclination=PI/2, halfWidth, scaledHalfWidth, depth;
+//Array of points, slider names, and dike object
+Point[] points;
+Slider wid;
+Slider dep;
+Dike dike;
+
+void setup() {
+  size(1000, 1000); 
+  background(128);
+  stroke(0);
+  strokeWeight(4);
+  //y axis
+  line(.075*width, .010*height, .075*width, .990*height);
+  //tick marks
+  line(.060*width, .375*height, .075*width, .375*height);
+  line(.060*width, .01*height, .075*width, .01*height);
+  //labels
+  textAlign(RIGHT);
+  text("-500", .060*width, .775*height);
+  text("0", .058*width, .379*height);
+  text("+500", .060*width, .014*height);
+
+  //labels
+  textAlign(CENTER);
+  text("nT", .020*width, .350*height);
+  text("Depth", .020*width, .850*height);
+  text("Width (m)", .850*width, .860*height);
+  text("Depth (m)", .850*width, .920*height);
+
+  text("S", .010*width, .765*height);
+  text("N", .99*width, .765*height);
+  text("+500", .99*width, .775*height);
+  //Setting up the points that graph T
+  points = new Point[100];
+  for (int i=0; i&lt;points.length; i++) {
+    points[i] = new Point(parseInt(i-points.length/2.)*20, 0);
+  }
+  //must use parseInt() instead of (int)
+  //Sliders
+  wid=new Slider(parseInt(.800*width), parseInt(.870*height), parseInt(.100*width), parseInt(.030*height), 0, 100, 50);
+  dep=new Slider(parseInt(.800*width), parseInt(.930*height), parseInt(.100*width), parseInt(.030*height), 0, 100, 50);
+  //Half of the width of the dike 
+  halfWidth=wid.current/2;
+  scaledHalfWidth = parseInt(halfWidth/1000.*.456*width);
+  //Dike setup
+  dike=new Dike(parseInt(.535*width-scaledHalfWidth), parseInt(depth/100.*.25*height+.75*height), parseInt(scaledHalfWidth*2), parseInt(.100*height)/*parseInt(scaledHalfWidth*2)*/, 0);
+}
+
+void draw() {
+  noStroke();
+  fill(128);
+  //rect for graph
+  rect(.079*width, 0, width-20, .748*height);
+  //updates the dike and points
+  dike.update();
+  for (int i=0; i&lt;points.length; i++) {
+    points[i].update();
+    points[i].display();
+  }
+  //x axis
+  strokeWeight(4);
+  line(.010*width, .75*height, .990*width, .75*height);
+}
+//Point class 
+class Point {
+  int  x, y, declination, scaledX;
+  float theta, jx, jz, a, b, T, J_intensity=200;
+  Point(int x, int y) {
+    this.x=x;
+    this.y=y;
+    //Always equal to zero in this sketch
+    this.declination=0;
+  }
+  void update() {
+    /* theta is the angle between the dipping 
+     dike and the inclination of the vector of 
+     magnetization projected in the x direction */
+    theta = dike.dipAngle - atan2(tan(degrees(inclination)), sin(declination)); 
+
+    /* compute the components of magnetization wrt theta */
+    jx = J_intensity*sin(theta);
+    jz = J_intensity*cos(theta);
+
+
+    a = -2.0*halfWidth*(jx*sin(degrees(inclination)) + jz*cos(degrees(inclination))*sin(declination));
+    b = 2.0*halfWidth*(-jx*cos(degrees(inclination))*sin(declination) + jz*sin(degrees(inclination)));
+    //T is the value being graphed
+    T = (float)(a*x + b*depth)/(x*x + depth*depth);
+    //scaled T
+    y = constrain(parseInt(.375*height-(T/1000.*.375*width)), 0, parseInt(.739*height));
+    scaledX = parseInt(.535*width-x/1000.*.456*width);
+  }
+  void display() {
+    stroke(0);
+    strokeWeight(1);
+    fill(255);
+    ellipse(constrain(scaledX, .085*width, width), y, .010*width, .010*height);
+  }
+}
+class Slider {
+  int x, y, w, h, currentPixels;
+  float min, max, current;
+  Slider(int x, int y, int w, int h, float min, float max, float initial) {
+    this.x=x;
+    this.y=y;
+    this.w=w;
+    this.h=h;
+    this.min=min;
+    this.max=max;
+    //Current is the value of the slider
+    current=initial;
+    currentPixels=this.dataToPixels();
+    this.update();
+  }
+
+  boolean mouseOver() {
+    if (mouseX&gt;x-2&&mouseX&lt;w+x+2) {
+      if (mouseY&gt;y&&mouseY&lt;h+y) {
+        return true;
+      }
+    }
+    return false;
+  }
+  void update() {
+    currentPixels=constrain(mouseX-x, 0, w);
+    fill(51, 51, 204);
+    noStroke();
+    rect(x, y, w, h);
+
+    fill(0, 100, 0);
+    rect(x, y, currentPixels, h);
+    current=pixelsToData();
+    fill(255);
+    text(current, x+w/3, y+h/2);
+  }
+  float pixelsToData() {
+    return (float)currentPixels/w*(max-min)+min;
+  }
+  int dataToPixels() {
+    return parseInt(current/(max-min)*w);
+  }
+}
+class Dike {
+  int x, y, w, h, dipAngle;
+  //(x,y,width,height,Angle of the dike)
+  Dike(int x, int y, int w, int h, int dipAngle) {
+    this.x= x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.dipAngle = dipAngle;
+  }
+  void update() {
+    //Makes sure the dike starts under the x-axis
+    if (y&lt;.75*height+h/2) {
+      y=(int)(.75*height+h/2);
+    }
+    //Updates width to the current value of the slider
+    w=(int)wid.current;
+    halfWidth=wid.current/2;
+    scaledHalfWidth = parseInt(halfWidth/1000.*.456*width);
+    depth=dep.current;
+    //Dike rectangle
+    rect(.079*width, .753*height, .68*width, height);
+    pushMatrix(); //push Matrix so we can rotate
+    translate(x, y+depth/100.*abs(height-y)+5); //translate to where you want it
+    rotate(radians(dipAngle)); //rotate the image 
+    fill(255, 0, 0);
+    rect(-w/2, -h/2, w, h);
+    popMatrix(); //don't forget to pop the matrix
+  }
+}
+void mouseDragged() {
+  if (wid.mouseOver()) {
+    wid.update();
+  }
+  if (dep.mouseOver()) {
+    dep.update();
+  }
+}
+void keyPressed() {
+  //This is for rotating the dike using the left and right arrow keys
+  if (keyCode == 37) { //arrows are coded so you can't call "key"
+    dike.dipAngle = constrain(--dike.dipAngle, -90, 90); //left arrow rotates one way
+  } else if (keyCode == 39) { 
+    dike.dipAngle = constrain(++dike.dipAngle, -90, 90); //right arrow rotates the other way
+  }
+}
+</pre>
+<p></p>
+</div>
+<div class="content" id="about">
+<p>These are the parameters that go into the calculation:
+<br><br>Number of stations - half of the stations are plotted left of the dike, and half to the right; increasing the number of stations increases the resolution of the anomaly; note that the stations are arranged orthogonal to the dike
+
+<br><br>Sample interval - distance, in meters, between stations
+
+<br><br>Dike depth - the depth, in meters, to the top of the dike
+
+<br><br>Dike Dip - the dip of the dike with respect to the horizontal, in degrees. Keep dike dips between 10 and 170 degrees
+
+<br><br>Intensity of Mag. - the intensity of magnetization of the dike, commonly a positive number between < 3 amp/m and occasionally < 10 amp/m
+
+<br><br>Inclination - inclination of the Earth's magnetic field, in degrees
+
+<br><br>Declination, or azimuth, is the angle between the dike and magnetic north, in degrees. Note it is not the declination of the Earth's magnetic field with respect to true north
+
+<br><br><br><br><br>These tools were written in Processing by J.A. Abbatiello and E.M. Drobes in August, 2015</p>
+</div>
+</div>
+<div class="separator"></div>
+<div id="bottom">
+<a href="#" onclick="loadContent('incSketch')">Inclination change</a>
+<a href="#" onclick="loadContent('dikeSketch')">Changing dike</a>
+<a href="#" onclick="loadContent('incSrc')">Inclination source code</a>
+<a href="#" onclick="loadContent('dikeSrc')">Dike change source code</a>
+<a href="#" onclick="loadContent('about')">About</a>
+
+
+</div>
+</body>
+<script type="text/javascript">
+function loadContent(id){
+var content=document.getElementsByClassName("content");
+for(var i=0; i<content.length;i++){
+content[i].style.display="none";
+}
+document.getElementById(id).style.display="initial";
+}
+loadContent("incSketch");
+
+</script>
+</html>
